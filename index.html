@@ -12,31 +12,32 @@
     <button id="writeButton" style="margin-top: 10px; padding: 10px 20px;">Scrivi su NFC</button>
     <p id="status" style="margin-top: 20px; color: blue;"></p>
 
-    <script>
+     <script>
         document.getElementById('writeButton').addEventListener('click', async () => {
             const statusElement = document.getElementById('status');
             const value = document.getElementById('ndefValue').value;
-
+    
             // Validazione input
             const numberValue = parseInt(value, 10);
             if (isNaN(numberValue) || numberValue < 500 || numberValue > 600) {
                 statusElement.textContent = 'Errore: inserisci un numero valido tra 500 e 600.';
                 statusElement.style.color = 'red';
+                console.warn('Input non valido:', value);
                 return;
             }
-
+    
             const textToWrite = `021905300${value}00`;
-
+    
             if ('NDEFReader' in window) {
                 try {
-                    console.log('Avvio della lettura/scrittura NFC...');
+                    console.log('API Web NFC trovata, avvio NFC...');
                     const ndef = new NDEFReader();
                     console.log('Attivazione scansione NFC...');
-                    await ndef.scan(); // Inizia la scansione per trovare un tag NFC.
-
+                    await ndef.scan();
+    
                     statusElement.textContent = `Avvicina il tag NFC... Il valore che sarà scritto è: ${textToWrite}`;
-
-                    console.log('Scrivo il testo sul tag NFC...');
+                    console.log(`Valore da scrivere: ${textToWrite}`);
+    
                     await ndef.write({
                         records: [
                             {
@@ -45,18 +46,18 @@
                             }
                         ]
                     });
-
+    
                     statusElement.textContent = `Testo scritto con successo: ${textToWrite}`;
                     statusElement.style.color = 'green';
-                    console.log('Testo scritto con successo.');
+                    console.log('Scrittura completata con successo.');
                 } catch (error) {
-                    console.error('Errore durante l'interazione NFC:', error);
+                    console.error('Errore durante l\'interazione NFC:', error);
                     statusElement.textContent = 'Errore durante la scrittura sul tag NFC: ' + error.message;
                     statusElement.style.color = 'red';
                 }
             } else {
                 console.warn('API Web NFC non supportata nel browser.');
-                statusElement.textContent = 'Il tuo browser non supporta l'API Web NFC.';
+                statusElement.textContent = 'Il tuo browser non supporta l\'API Web NFC.';
                 statusElement.style.color = 'red';
             }
         });
