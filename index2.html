@@ -4,32 +4,107 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web NFC Writer</title>
+    <style>
+        .input-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .control-button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        
+        .control-button:hover {
+            background-color: #e0e0e0;
+        }
+        
+        #ndefValue {
+            width: 150px;
+            padding: 8px;
+            font-size: 16px;
+        }
+        
+        #writeButton {
+            display: block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        #writeButton:hover {
+            background-color: #45a049;
+        }
+    </style>
 </head>
 <body>
     <h1>NFC Writer</h1>
-    <p>Numero corrente:</p>
-    <input type="number" id="ndefValue" value="120" readonly style="width: 100%; padding: 8px;">
-    <button id="decrementButton" style="margin-top: 10px; padding: 10px 20px;">-</button>
-    <button id="incrementButton" style="margin-top: 10px; padding: 10px 20px;">+</button>
-    <button id="writeButton" style="margin-top: 10px; padding: 10px 20px;">Scrivi su NFC</button>
+    <p>Inserisci il valore iniziale per "xxx":</p>
+    
+    <div class="input-container">
+        <button class="control-button" id="decrementButton">-</button>
+        <input type="number" id="ndefValue" placeholder="Inserisci un numero">
+        <button class="control-button" id="incrementButton">+</button>
+    </div>
+    
+    <button id="writeButton">Scrivi su NFC</button>
     <p id="status" style="margin-top: 20px; color: blue;"></p>
+    <p id="nextNumber" style="margin-top: 10px; color: green;"></p>
 
     <script>
-        let currentValue = 120; // Valore iniziale
+        let currentNumber = null;
+        const inputElement = document.getElementById('ndefValue');
+        const statusElement = document.getElementById('status');
+        const nextNumberElement = document.getElementById('nextNumber');
+        
+        // Funzione per aggiornare il display
+        function updateDisplay() {
+            inputElement.value = currentNumber;
+            nextNumberElement.textContent = `Prossimo numero che sarà scritto: ${currentNumber}`;
+        }
 
+        // Event listener per il pulsante +
         document.getElementById('incrementButton').addEventListener('click', () => {
-            currentValue++;
-            document.getElementById('ndefValue').value = currentValue;
+            if (currentNumber === null) {
+                currentNumber = parseInt(inputElement.value) || 0;
+            }
+            currentNumber++;
+            updateDisplay();
         });
 
+        // Event listener per il pulsante -
         document.getElementById('decrementButton').addEventListener('click', () => {
-            currentValue--;
-            document.getElementById('ndefValue').value = currentValue;
+            if (currentNumber === null) {
+                currentNumber = parseInt(inputElement.value) || 0;
+            }
+            currentNumber--;
+            updateDisplay();
         });
 
         document.getElementById('writeButton').addEventListener('click', async () => {
-            const statusElement = document.getElementById('status');
-            const textToWrite = `021905300${currentValue}00`;
+            if (currentNumber === null) {
+                currentNumber = parseInt(inputElement.value, 10);
+            }
+    
+            if (isNaN(currentNumber)) {
+                statusElement.textContent = 'Errore: inserisci un numero valido.';
+                statusElement.style.color = 'red';
+                console.warn('Input non valido:', currentNumber);
+                return;
+            }
+    
+            const textToWrite = `021905300${currentNumber}00`;
     
             if ('NDEFReader' in window) {
                 try {
@@ -38,11 +113,13 @@
                     console.log('Attivazione scansione NFC...');
                     await ndef.scan();
     
-                    statusElement.textContent = `Avvicina il tag NFC... Cancellando il contenuto.`;
-                    await ndef.write([]); // Cancella tutto il contenuto del tag
-                    console.log('Memoria NFC cancellata con successo.');
-                    
-                    statusElement.textContent = `Avvicina nuovamente il tag NFC... Il valore che sarà scritto è: ${textToWrite}`;
+                    statusElement.textContent = 'Avvicina il tag NFC per la formattazione...';
+                    console.log('Formattazione tag NFC...');
+
+                    await ndef.write({ records: [] });
+                    console.log('Formattazione completata');
+
+                    statusElement.textContent = `Formattazione completata. Avvicina nuovamente il tag per scrivere: ${textToWrite}`;
                     console.log(`Valore da scrivere: ${textToWrite}`);
     
                     await ndef.write({
@@ -54,23 +131,28 @@
                         ]
                     });
     
-                    statusElement.textContent = `Testo scritto con successo: ${textToWrite}`;
+                    statusElement.textContent = `Tag formattato e testo scritto con successo: ${textToWrite}`;
                     statusElement.style.color = 'green';
                     console.log('Scrittura completata con successo.');
-    
-                    // Incrementa il valore
-                    currentValue++;
-                    document.getElementById('ndefValue').value = currentValue;
+
+                    currentNumber++;
+                    updateDisplay();
+
                 } catch (error) {
-                    console.error('Errore durante l'interazione NFC:', error);
+                    console.error('Errore durante l\'interazione NFC:', error);
                     statusElement.textContent = 'Errore durante la scrittura sul tag NFC: ' + error.message;
                     statusElement.style.color = 'red';
                 }
             } else {
                 console.warn('API Web NFC non supportata nel browser.');
-                statusElement.textContent = 'Il tuo browser non supporta l'API Web NFC.';
+                statusElement.textContent = 'Il tuo browser non supporta l\'API Web NFC.';
                 statusElement.style.color = 'red';
             }
+        });
+
+        inputElement.addEventListener('change', (e) => {
+            currentNumber = parseInt(e.target.value, 10);
+            nextNumberElement.textContent = `Prossimo numero che sarà scritto: ${currentNumber}`;
         });
     </script>
 </body>
