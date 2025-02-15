@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web NFC Writer</title>
+</head>
+<body>
+    <h1>NFC Writer</h1>
+    <p>Numero corrente:</p>
+    <input type="number" id="ndefValue" value="120" readonly style="width: 100%; padding: 8px;">
+    <button id="decrementButton" style="margin-top: 10px; padding: 10px 20px;">-</button>
+    <button id="incrementButton" style="margin-top: 10px; padding: 10px 20px;">+</button>
+    <button id="writeButton" style="margin-top: 10px; padding: 10px 20px;">Scrivi su NFC</button>
+    <p id="status" style="margin-top: 20px; color: blue;"></p>
+
+    <script>
+        let currentValue = 120; // Valore iniziale
+
+        document.getElementById('incrementButton').addEventListener('click', () => {
+            currentValue++;
+            document.getElementById('ndefValue').value = currentValue;
+        });
+
+        document.getElementById('decrementButton').addEventListener('click', () => {
+            currentValue--;
+            document.getElementById('ndefValue').value = currentValue;
+        });
+
+        document.getElementById('writeButton').addEventListener('click', async () => {
+            const statusElement = document.getElementById('status');
+            const textToWrite = `021905300${currentValue}00`;
+    
+            if ('NDEFReader' in window) {
+                try {
+                    console.log('API Web NFC trovata, avvio NFC...');
+                    const ndef = new NDEFReader();
+                    console.log('Attivazione scansione NFC...');
+                    await ndef.scan();
+    
+                    statusElement.textContent = `Avvicina il tag NFC... Cancellando il contenuto.`;
+                    await ndef.write([]); // Cancella tutto il contenuto del tag
+                    console.log('Memoria NFC cancellata con successo.');
+                    
+                    statusElement.textContent = `Avvicina nuovamente il tag NFC... Il valore che sarà scritto è: ${textToWrite}`;
+                    console.log(`Valore da scrivere: ${textToWrite}`);
+    
+                    await ndef.write({
+                        records: [
+                            {
+                                recordType: 'text',
+                                data: textToWrite,
+                            }
+                        ]
+                    });
+    
+                    statusElement.textContent = `Testo scritto con successo: ${textToWrite}`;
+                    statusElement.style.color = 'green';
+                    console.log('Scrittura completata con successo.');
+    
+                    // Incrementa il valore
+                    currentValue++;
+                    document.getElementById('ndefValue').value = currentValue;
+                } catch (error) {
+                    console.error('Errore durante l'interazione NFC:', error);
+                    statusElement.textContent = 'Errore durante la scrittura sul tag NFC: ' + error.message;
+                    statusElement.style.color = 'red';
+                }
+            } else {
+                console.warn('API Web NFC non supportata nel browser.');
+                statusElement.textContent = 'Il tuo browser non supporta l'API Web NFC.';
+                statusElement.style.color = 'red';
+            }
+        });
+    </script>
+</body>
+</html>
