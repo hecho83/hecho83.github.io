@@ -68,13 +68,11 @@
         const statusElement = document.getElementById('status');
         const nextNumberElement = document.getElementById('nextNumber');
         
-        // Funzione per aggiornare il display
         function updateDisplay() {
             inputElement.value = currentNumber;
             nextNumberElement.textContent = `Prossimo numero che sarà scritto: ${currentNumber}`;
         }
 
-        // Event listener per il pulsante +
         document.getElementById('incrementButton').addEventListener('click', () => {
             if (currentNumber === null) {
                 currentNumber = parseInt(inputElement.value) || 0;
@@ -83,7 +81,6 @@
             updateDisplay();
         });
 
-        // Event listener per il pulsante -
         document.getElementById('decrementButton').addEventListener('click', () => {
             if (currentNumber === null) {
                 currentNumber = parseInt(inputElement.value) || 0;
@@ -113,15 +110,10 @@
                     console.log('Attivazione scansione NFC...');
                     await ndef.scan();
     
-                    statusElement.textContent = 'Avvicina il tag NFC per la formattazione...';
-                    console.log('Formattazione tag NFC...');
-
-                    await ndef.write({ records: [] });
-                    console.log('Formattazione completata');
-
-                    statusElement.textContent = `Formattazione completata. Avvicina nuovamente il tag per scrivere: ${textToWrite}`;
+                    statusElement.textContent = 'Avvicina il tag NFC per la scrittura...';
                     console.log(`Valore da scrivere: ${textToWrite}`);
     
+                    // Scrittura diretta senza formattazione
                     await ndef.write({
                         records: [
                             {
@@ -131,7 +123,7 @@
                         ]
                     });
     
-                    statusElement.textContent = `Tag formattato e testo scritto con successo: ${textToWrite}`;
+                    statusElement.textContent = `Testo scritto con successo: ${textToWrite}`;
                     statusElement.style.color = 'green';
                     console.log('Scrittura completata con successo.');
 
